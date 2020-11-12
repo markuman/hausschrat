@@ -2,39 +2,9 @@ from bottle import route, request, HTTPResponse, static_file, run
 from uuid import uuid4
 import urllib
 import requests
-import mariadb
-import os
+from lib import db
 
-def init_db():
-    db = db_connection()
-    sql = """
-    create
-        table if not exists
-            certs(
-            id bigint UNSIGNED not null AUTO_INCREMENT,
-            user varchar(256) not null,
-            signed datetime not null default now(),
-            expired datetime not null,
-            revoked bool not null default 0,
-            cert varchar(256) not null,
-            PRIMARY KEY(id)
-        ) 
-            ENGINE=InnoDB;
-    """
-    cursor.execute(sql)
-    sql = """
-    create
-        table if not exists
-            hausschrat(
-            setting varchar(32) not null,
-            value varchar(32) not null,
-            PRIMARY KEY(setting)
-        ) 
-            ENGINE=InnoDB;
-    """
-    cursor.execute(sql)
-    cursor.close()
-    db.close()
+mariadb = db.db()
 
 def detect_scm(scm_url):
     """
@@ -88,6 +58,7 @@ def sign():
             scm_url: gitea or gitlab instance to use
 
             username: requires `strict_user: 0` server settings
+            expired: user value <= server default value
 
 
         1. determin if it's a gitea or a gitlab instance
@@ -127,4 +98,5 @@ def sign():
 
 
 if __name__ == '__main__':
-	run(host='0.0.0.0', port=8080)
+    mariadb.init_db()
+    run(host='0.0.0.0', port=8080)
