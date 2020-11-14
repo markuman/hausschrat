@@ -3,6 +3,7 @@ from uuid import uuid4
 import urllib
 import requests
 from lib import db
+from lib import utils
 
 mariadb = db.db()
 
@@ -35,13 +36,7 @@ def get_default_values():
     select value from hausschrat where setting = 'expire';
     """
 
-def sign_key(pub_key, user):
-    authority_name, expire = get_default_values()
-    stream = os.popen("ssh-keygen -s {PRIVATE_KEY} -I {AUTHORITY} -n {USER} -V {EXPIRE} {PUBLIC_KEY}")
-    raw = stream.read()
 
-    save_cert(user, expired, cert)
-    return True
 
 @route('/')
 def oh_hai():
@@ -87,8 +82,8 @@ def sign():
                 break
         
         if None not in [pub_key, user]:
-            cert = sign(pub_key, user)
-            return {'pub_key': pub_key, 'user': user}
+            cert = utils.sign_key(pub_key, user, mariadb)
+            return {'pub_key': cert}
         else:
             return HTTPResponse(status=401)
 
