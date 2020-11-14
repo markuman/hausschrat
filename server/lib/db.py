@@ -2,7 +2,6 @@ import mariadb
 import os
 from pathlib import Path
 
-
 class db(object):
 
     def __init__(self):
@@ -73,3 +72,14 @@ class db(object):
     def write(self, sql):
         with self.db.cursor() as cursor:
             cursor.execute(sql)
+
+    def save_cert(self, cert, user, expire):
+        sql = """
+        insert into certs (user, expired, cert)
+            values (?, ?, ?)
+        """
+        with self.db.cursor() as cursor:
+            cursor.execute(sql, 
+                (user, expire, cert)
+            )
+
