@@ -1,7 +1,7 @@
 # hausschrat
 _the long awaited ssh ca_
 
-- based on source-code hosting services
+- based on source-code hosting platforms
   - GitLab
   - Gitea
 - CLI
