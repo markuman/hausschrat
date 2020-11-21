@@ -51,12 +51,14 @@ def sign():
                 break
         
         if None not in [pub_key, user]:
-            if data.get('username') == user:
+            if data.get('username') is None or data.get('username') == user:
                 cert = utils.sign_key(pub_key, user, mariadb)
                 return {'pub_key': cert}
+
             elif mariadb.get_value('strict_user') == 'no':
                 cert = utils.sign_key(pub_key, data.get('username'), mariadb)
                 return {'pub_key': cert}
+                
             else:
                 return HTTPResponse(status=403)
         else:
