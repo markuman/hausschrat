@@ -73,6 +73,10 @@ class db(object):
         INSERT IGNORE INTO `hausschrat`
             SET `setting` = 'scm_url',
             `value` = 'gitlab.com';
+        ""","""
+        INSERT IGNORE INTO `hausschrat`
+            SET `setting` = 'auth_vendor',
+            `value` = 'nextcloud';
         """]
 
         for sql in QUERIES:
