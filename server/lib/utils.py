@@ -1,8 +1,3 @@
-
-print(dateparser.parse("now"))
-print(dateparser.parse("now-30s"))
-
-import dateparser
 import tempfile
 
 from datetime import timedelta
@@ -37,12 +32,32 @@ def sign_key(pub_key, user, mariadb):
         PUBLIC_KEY=pub_key_file
     ))
     raw = stream.read()
-    expired_date = dateparser.parse("now+{EXP}".format(EXP=expire))
+    #expired_date = dateparser.parse("now+{EXP}".format(EXP=expire))
 
-    with open(cert_key_file, 'r') as f
+    with open(cert_key_file, 'r') as f:
         cert = f.read()
     os.remove(pub_key_file)
     os.remove(cert_key_file)
 
     mariadb.save_cert(user, expired_date, cert)
     return cert
+
+def detect_scm(scm_url):
+    """
+        currently hausschrat is supporting gitea and gitlab.
+        gitea identification is stright forward.
+        gitlab identification is tias.
+    """
+    t = requests.get('{url}/api/v1/version'.format(url=scm_url))
+    if t.status_code == 200:
+        return {
+            'SCM': 'gitea',
+            'check_user': '{url}/api/v1/user',
+            'get_pub_keys': '{url}/api/v1/user/keys'
+        }
+    elif t.status_code == 503: # it's a gitlab :)
+        return {
+            'SCM': 'gitlab',
+            'check_user': '{url}/api/v4/user',
+            'get_pub_keys': '{url}/api/v4/user/keys'
+        }
