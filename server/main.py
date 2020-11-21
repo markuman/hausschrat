@@ -5,38 +5,6 @@ import requests
 from lib import db
 from lib import utils
 
-mariadb = db.db()
-
-def detect_scm(scm_url):
-    """
-        currently hausschrat is supporting gitea and gitlab.
-        gitea identification is stright forward.
-        gitlab identification is tias.
-    """
-    t = requests.get('{url}/api/v1/version'.format(url=scm_url))
-    if t.status_code == 200:
-        return {
-            'SCM': 'gitea',
-            'check_user': '{url}/api/v1/user',
-            'get_pub_keys': '{url}/api/v1/user/keys'
-        }
-    elif t.status_code == 503: # it's a gitlab :)
-        return {
-            'SCM': 'gitlab',
-            'check_user': '{url}/api/v4/user',
-            'get_pub_keys': '{url}/api/v4/user/keys'
-        }
-
-def get_default_values():
-    sql = """
-    select value from hausschrat where setting = 'authority_name';
-    """
-
-    sql = """
-    select value from hausschrat where setting = 'expire';
-    """
-
-
 
 @route('/')
 def oh_hai():
@@ -50,7 +18,6 @@ def sign():
         data:
             key: ssh key name
             api_token: Access token with read_user permissions
-            scm_url: gitea or gitlab instance to use
 
             username: requires `strict_user: 0` server settings
             expired: user value <= server default value
@@ -63,7 +30,9 @@ def sign():
             * when found, sign public key and return public-cert key.
     """
     data = request.json
-    api = detect_scm(data['scm_url'])
+    mariadb = db.db()
+    scm_url = mariadb.get_value('scm_url')
+    api = utils.detect_scm(scm_url)
     
     pub_keys = requests.get(api['get_pub_keys'].format(url=data['scm_url']),
         headers={
@@ -82,8 +51,14 @@ def sign():
                 break
         
         if None not in [pub_key, user]:
-            cert = utils.sign_key(pub_key, user, mariadb)
-            return {'pub_key': cert}
+            if data.get('username') == user:
+                cert = utils.sign_key(pub_key, user, mariadb)
+                return {'pub_key': cert}
+            elif mariadb.get_value('strict_user') == 'no':
+                cert = utils.sign_key(pub_key, data.get('username'), mariadb)
+                return {'pub_key': cert}
+            else:
+                return HTTPResponse(status=403)
         else:
             return HTTPResponse(status=401)
 
@@ -93,5 +68,7 @@ def sign():
 
 
 if __name__ == '__main__':
+    mariadb = db.db()
     mariadb.init_db()
+    mariadb.close()
     run(host='0.0.0.0', port=8080)
