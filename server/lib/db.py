@@ -8,6 +8,9 @@ class db(object):
         self.ssl = Path("/opt/mariadb.pem")
         self.db = self.connect()
 
+    def close(self):
+        self.db.close()
+
     def connect(self):
         if self.ssl.is_file():
             db = mariadb.connect(
@@ -23,12 +26,12 @@ class db(object):
                 port = 3306,
                 user = os.environ.get('DATABASE_USER') or 'hausschrat',
                 password = os.environ.get('DATABASE_PASSWORD') or 'hausschrat',
-                database = os.environ.get('DATABASE') or 'hausschrat',)
+                database = os.environ.get('DATABASE') or 'hausschrat')
         db.autocommit = True
         return db
 
     def init_db(self):
-        sql = """
+        QUERIES = ["""
         create
             table if not exists
                 certs(
@@ -41,10 +44,8 @@ class db(object):
                 PRIMARY KEY(id)
             ) 
                 ENGINE=InnoDB;
+        """,
         """
-        self.write(sql)
-
-        sql = """
         create
             table if not exists
                 hausschrat(
@@ -53,21 +54,29 @@ class db(object):
                 PRIMARY KEY(setting)
             ) 
             ENGINE=InnoDB;
+        """,
         """
-        self.write(sql)
-
-        sql = """
         INSERT IGNORE INTO `hausschrat`
             SET `setting` = 'expired',
             `value` = '1w';
+        """,
         """
-        self.write(sql)
-        sql = """
         INSERT IGNORE INTO `hausschrat`
             SET `setting` = 'strict_user',
             `value` = 'yes';
+        """,
         """
-        self.write(sql)
+        INSERT IGNORE INTO `hausschrat`
+            SET `setting` = 'authority_name',
+            `value` = 'hausschrat';
+        ""","""
+        INSERT IGNORE INTO `hausschrat`
+            SET `setting` = 'scm_url',
+            `value` = 'gitlab.com';
+        """]
+
+        for sql in QUERIES:
+            self.write(sql)
 
     def write(self, sql):
         with self.db.cursor() as cursor:
@@ -76,10 +85,31 @@ class db(object):
     def save_cert(self, cert, user, expire):
         sql = """
         insert into certs (user, expired, cert)
-            values (?, ?, ?)
+            values (?, ?, ?);
         """
         with self.db.cursor() as cursor:
             cursor.execute(sql, 
                 (user, expire, cert)
             )
 
+    def get_value(self, setting):
+        sql = """
+        select value from hausschrat where setting = '{SETTING}';
+        """.format(SETTING=setting)
+        with self.db.cursor() as cursor:
+            cursor.execute(sql)
+            retval = cursor.fetchall()
+        try:
+            return retval[0][0]
+        except:
+            return None
+
+    def revoked_certs(self):
+        sql = """
+        select cert from certs where expired > now() and revoked = 1;
+        """
+        with self.db.cursor() as cursor:
+            cursor.execute(sql)
+            retval = cursor.fetchall()
+        
+        return retval
