@@ -5,25 +5,25 @@ import yaml
 import sys
 import os
 
-def mergeDicts(CONFIG, DEFAULTS):
-    for k in DEFAULTS:
-        if CONFIG.get(k) is None:
-            CONFIG[k] = DEFAULTS.get(k)
-    return CONFIG
+def merge_dicts(config, defaults):
+    for k in defaults:
+        if config.get(k) is None:
+            config[k] = defaults.get(k)
+    return config
 
-def loadConfig(profile='default'):
+def load_config(profile='default'):
     with open((os.getenv("HOME") + "/.config/hausschrat.yml"), 'r') as stream:
         try:
             retval = yaml.safe_load(stream)
-            DEFAULTS = retval.get('default')
-            CONFIG = retval.get(profile)
-            return mergeDicts(CONFIG, DEFAULTS) 
+            defaults = retval.get('default')
+            config = retval.get(profile)
+            return merge_dicts(config, defaults)
         except yaml.YAMLError as exc:
             print(exc)
             sys.exit(1)
 
-def help():
-    print(""" 
+def _help():
+    print("""
 USAGE:        
 hausschrat <profile>
 hausschrat -v
@@ -34,30 +34,30 @@ config location: ~/.config/hausschrat.yml
 
 def request(config):
     response = requests.post(
-        '{SERVER}/sign'.format(SERVER=config.get('server')), 
+        '{SERVER}/sign'.format(SERVER=config.get('server')),
         json=config
     )
 
     if response.status_code == 200:
-        with open(config.get('cert_file').replace('~', os.getenv("HOME")), 'w') as f:
-            f.write(response.json().get('cert'))
+        with open(config.get('cert_file').replace('~', os.getenv("HOME")), 'w') as cert_file:
+            cert_file.write(response.json().get('cert'))
 
 
 
 if __name__ == "__main__":
     if len(sys.argv) == 2:
         if sys.argv[1] in ["--help", "-h"]:
-            help()
+            _help()
             sys.exit(0)
         elif sys.argv[1] in ["--version", "-v"]:
             print("1")
             sys.exit(0)
         else:
-            PROFILE = sys.argv[1]
+            profile = sys.argv[1]
     elif len(sys.argv) == 1:
-        PROFILE = 'default'
+        profie = 'default'
     else:
         sys.exit(1)
 
-    CONFIG = loadConfig(PROFILE)
-    request(CONFIG)
+    config = load_config(profile)
+    request(config)
