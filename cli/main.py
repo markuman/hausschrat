@@ -16,7 +16,7 @@ def loadConfig():
 
 if __name__ == "__main__":
     CONFIG = loadConfig()
-    response = requests.post('http://localhost:8080/sign', json={'key': CONFIG["defaults"]["key"], 'api_token': CONFIG["defaults"]["api_token"]})
+    response = requests.post('http://localhost:8080/sign', json={'expired': CONFIG["defaults"]["expire"], 'username': CONFIG["defaults"]["user"], 'key': CONFIG["defaults"]["key"], 'api_token': CONFIG["defaults"]["api_token"]})
     print(response)
     print(response.json())
 
