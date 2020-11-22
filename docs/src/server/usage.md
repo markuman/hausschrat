@@ -75,8 +75,21 @@ Default value: _not set_
 
 The location the the password for the private key for the used vendor.
 
+
+**`hausschrat_public_key`**  
+Default value: _not set_
+
+This is the placeholder to the CA public key. You don't nedd and should not care about it.  
+Once it is requested, _hausschrat_ will fetch the private key again, re-generate the public key and
+save it there for performance reasons.
+
 # Revoke
 
 In case you need to revoke a certificate, you must find the related row in `certs` table.  
 Once it is found, just set `revoked` to `1`.  
 Now you can request `https://{HAUSSCHRAT_URL}/revoke` with your orchestration and announce it to the sshd.
+
+# Servers Public Key
+
+You can also use the API endpoint `/public_key` in your orchestration to fetch the CA public key and announce it to the sshd.  
+Once it is fetched and regenerated, it will be stored in the `hausschrat` table - for performance issue.
