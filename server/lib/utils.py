@@ -5,11 +5,12 @@ import pexpect
 import requests
 import os
 import time
-from lib import db
 
+from lib import db
 from lib.vendors import nextcloud, aws
 
-UNITS = {"s":"seconds", "m":"minutes", "h":"hours", "d":"days", "w":"weeks"}
+UNITS = {"m":"minutes", "h":"hours", "d":"days", "w":"weeks"}
+
 def convert_to_seconds(s):
     count = int(s[:-1])
     unit = UNITS[ s[-1] ]

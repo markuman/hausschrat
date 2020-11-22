@@ -4,7 +4,11 @@ import urllib
 import requests
 from lib import db
 from lib import utils
+import logging
+import os
 
+logging.basicConfig(level=os.environ.get("LOGLEVEL", "INFO"))
+logger = logging.getLogger('hausschrat')
 
 @route('/')
 def oh_hai():
@@ -34,8 +38,12 @@ def sign():
     settings = mariadb.get_settings()
     mariadb.close()
     scm_url = settings.get('scm_url') or data.get('scm_url')
-    api = utils.detect_scm(scm_url)
     
+    if scm_url is None:
+        logger.error(" scm_url not given")
+        return HTTPResponse(status=401)
+
+    api = utils.detect_scm(scm_url)
     pub_keys = requests.get(api['get_pub_keys'].format(url=scm_url),
         headers={
             'Authorization': 'token {TOKEN}'.format(TOKEN=data.get('api_token')),
@@ -45,33 +53,41 @@ def sign():
     )
 
     if pub_keys.status_code == 200:
+        logger.info(" api token is valid")
 
         pub_key, user = None, None
         for key in pub_keys.json():
             if data['key'] == key['title']:
+                logger.info(" found requested public key")
                 pub_key = key['key']
                 user = key['user']['username']
                 break
+        
         expire = data.get('expire') or settings.get('expire')
-        if None not in [pub_key, user]:
 
+        if None not in [pub_key, user]:
+            client_ip = request.environ.get('HTTP_X_FORWARDED_FOR') or request.environ.get('REMOTE_ADDR')
             if data.get('username') is None or data.get('username') == user:
+                logger.info(" process certificate issue from {IP}".format(IP=client_ip))
                 kh = utils.keyHandling(pub_key, user, expire, settings)
                 cert = kh.sign_key()
                 return { 'cert': cert}
 
             elif mariadb.get_value('mode') in ['open', 'host']:
+                logger.info(" process certificate issue from {IP}".format(IP=client_ip))
                 kh = utils.keyHandling(pub_key, data.get('username'), expire, settings)
                 cert = kh.sign_key()
                 return { 'cert': cert}
             
-                
             else:
+                logger.error(" requested username does not match with api_token")
                 return HTTPResponse(status=403)
         else:
+            logger.error(" user or public key not found")
             return HTTPResponse(status=401)
 
     else:
+        logger.error(" api_token is invalid for scm_url")
         return HTTPResponse(status=403)
 
 
