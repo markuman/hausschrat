@@ -40,7 +40,7 @@ class db(object):
                 signed datetime not null default now(),
                 expired datetime not null,
                 revoked bool not null default 0,
-                cert varchar(256) not null,
+                pub_key varchar(256) not null,
                 PRIMARY KEY(id)
             ) 
                 ENGINE=InnoDB;
@@ -88,7 +88,7 @@ class db(object):
 
     def save_cert(self, cert, user, expire):
         sql = """
-        insert into certs (user, expired, cert)
+        insert into certs (user, expired, pub_key)
             values (?, ?, ?);
         """
         with self.db.cursor() as cursor:

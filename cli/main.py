@@ -16,7 +16,7 @@ def loadConfig():
 
 if __name__ == "__main__":
     CONFIG = loadConfig()
-    response = requests.post('http://localhost:8080/sign', json={'key': 'markus@dell', 'api_token': CONFIG["defaults"]["api_token"], 'scm_url': 'https://git.osuv.de'})
+    response = requests.post('http://localhost:8080/sign', json={'key': CONFIG["defaults"]["key"], 'api_token': CONFIG["defaults"]["api_token"]})
     print(response)
     print(response.json())
 

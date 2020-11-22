@@ -34,13 +34,14 @@ def sign():
     scm_url = mariadb.get_value('scm_url')
     api = utils.detect_scm(scm_url)
     
-    pub_keys = requests.get(api['get_pub_keys'].format(url=data['scm_url']),
+    pub_keys = requests.get(api['get_pub_keys'].format(url=scm_url),
         headers={
             'Authorization': 'token {TOKEN}'.format(TOKEN=data['api_token']),
             'Content-Type': 'application/json',
             'accept': 'application/json'
         }
     )
+
     if pub_keys.status_code == 200:
 
         pub_key, user = None, None
@@ -49,15 +50,21 @@ def sign():
                 pub_key = key['key']
                 user = key['user']['username']
                 break
-        
+        expire = data.get('expired') or mariadb.get_value('expired')
         if None not in [pub_key, user]:
+
             if data.get('username') is None or data.get('username') == user:
-                cert = utils.sign_key(pub_key, user, mariadb)
-                return {'pub_key': cert}
+                kh = utils.keyHandling(pub_key, user, expire, mariadb)
+                cert = kh.sign_key()
+                mariadb.close()
+                return { 'cert': cert}
 
             elif mariadb.get_value('strict_user') == 'no':
-                cert = utils.sign_key(pub_key, data.get('username'), mariadb)
-                return {'pub_key': cert}
+                kh = utils.keyHandling(pub_key, data.get('username'), expire, mariadb)
+                cert = kh.sign_key()
+                mariadb.close()
+                return { 'cert': cert}
+            
                 
             else:
                 return HTTPResponse(status=403)

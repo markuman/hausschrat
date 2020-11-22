@@ -37,7 +37,7 @@ class vault(object):
             'https://{HOST}/remote.php/dav/files/{USER}/{PATH}'.format(
                 HOST=self.HOST, 
                 USER=self.USER,
-                PATH=path),
+                PATH=self.path),
             auth=(self.USER, self.TOKEN)
         )
 

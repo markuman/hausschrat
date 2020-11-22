@@ -1,5 +1,10 @@
 import tempfile
 from datetime import timedelta
+from datetime import datetime
+import pexpect
+import requests
+import os
+import time
 
 from lib.vendors import nextcloud, aws
 
@@ -33,21 +38,33 @@ def detect_scm(scm_url):
     
 class keyHandling(object):
 
-    def __init__(self, pub_key, user, mariadb):
+    def __init__(self, pub_key, user, expire, mariadb):
         self.priv_key_location = '/tmp/priv_key'
         self.user = user
         self.mariadb = mariadb
+        self.pub_key = pub_key
         vendor = mariadb.get_value('auth_vendor')
         if vendor == 'nextcloud':
-            self.vault = nextcloud.vault()
+            self.vault = nextcloud.vault(
+                mariadb.get_value('vendor_key_location'),
+                mariadb.get_value('vendor_password_name')
+            )
         elif vendor == 'aws':
             self.vault = aws.vault()
 
+        default_exire = mariadb.get_value('expired')
+        requested_expire = expire
+        
+        if convert_to_seconds(default_exire) < convert_to_seconds(requested_expire):
+            self.expire = default_exire
+        else:
+            self.expire = requested_expire
+        
         self.pub_key_file, self.pub_cert_file = self.write_pub_key(pub_key)
-        self.password = receive_priv_key()
+        self.password = self.receive_priv_key()
 
 
-    def write_pub_key(pub_key):
+    def write_pub_key(self, pub_key):
         pub_key_file = "/tmp/{name}".format(name=next(tempfile._get_candidate_names())) + '.pub'
         with open(pub_key_file, 'w' ) as f:
             f.write(pub_key)
@@ -59,31 +76,40 @@ class keyHandling(object):
 
     def receive_priv_key(self):
         priv_key = self.vault.key()
-        with open(pub_key_file, 'w' ) as f:
-            f.write(self.priv_key_location)
+        with open(self.priv_key_location, 'w' ) as f:
+            f.write(priv_key.decode('utf-8'))
+        os.chmod(self.priv_key_location, 0o600)
         return self.vault.password()
 
     def sign_key(self):
 
-        expire = self.mariadb.get_value('expired')
         authority_name = self.mariadb.get_value('authority_name')
 
-        stream = os.popen("ssh-keygen -s {PRIV_KEY} -I {AUTHORITY} -n {USER} -V {EXPIRE} {PUBLIC_KEY}".format(
+        expire_datetime = str(
+            datetime.fromtimestamp(
+                datetime.now().timestamp() + convert_to_seconds(self.expire)
+            )
+        )
+
+        child = pexpect.spawn ("ssh-keygen -s {PRIV_KEY} -I {AUTHORITY} -n {USER} -V {EXPIRE} {PUBLIC_KEY}".format(
             AUTHORITY=authority_name,
             USER=self.user,
-            EXPIRE=expire,
+            EXPIRE=self.expire,
             PUBLIC_KEY=self.pub_key_file,
             PRIV_KEY=self.priv_key_location
         ))
-        raw = stream.read()
-        #expired_date = dateparser.parse("now+{EXP}".format(EXP=expire))
+        child.expect ('Enter passphrase: ')
+        child.sendline (self.password)
 
-        with open(self.cert_key_file, 'r') as f:
-            self.mariadb.save_cert(user, expired_date, f.read())
+        if child.exitstatus is None:
+            time.sleep(2)
+
+        with open(self.pub_cert_file, 'r') as f:
+            cert = f.read()
+        self.mariadb.save_cert(self.pub_key, self.user, expire_datetime)
         os.remove(self.pub_key_file)
-        os.remove(self.cert_key_file)
+        os.remove(self.pub_cert_file)
         os.remove(self.priv_key_location)
 
-        
         return cert
-
+        
