@@ -20,7 +20,7 @@ def sign():
             api_token: Access token with read_user permissions
 
             username: requires `strict_user: 0` server settings
-            expired: user value <= server default value
+            expire: user value <= server default value
 
 
         1. determin if it's a gitea or a gitlab instance
@@ -31,7 +31,9 @@ def sign():
     """
     data = request.json
     mariadb = db.db()
-    scm_url = mariadb.get_value('scm_url') or data.get('scm_url')
+    settings = mariadb.get_settings()
+    mariadb.close()
+    scm_url = settings.get('scm_url') or data.get('scm_url')
     api = utils.detect_scm(scm_url)
     
     pub_keys = requests.get(api['get_pub_keys'].format(url=scm_url),
@@ -50,19 +52,17 @@ def sign():
                 pub_key = key['key']
                 user = key['user']['username']
                 break
-        expire = data.get('expired') or mariadb.get_value('expired')
+        expire = data.get('expire') or settings.get('expire')
         if None not in [pub_key, user]:
 
             if data.get('username') is None or data.get('username') == user:
-                kh = utils.keyHandling(pub_key, user, expire, mariadb)
+                kh = utils.keyHandling(pub_key, user, expire, settings)
                 cert = kh.sign_key()
-                mariadb.close()
                 return { 'cert': cert}
 
-            elif mariadb.get_value('strict_user') == 'no':
-                kh = utils.keyHandling(pub_key, data.get('username'), expire, mariadb)
+            elif mariadb.get_value('mode') in ['open', 'host']:
+                kh = utils.keyHandling(pub_key, data.get('username'), expire, settings)
                 cert = kh.sign_key()
-                mariadb.close()
                 return { 'cert': cert}
             
                 

@@ -57,13 +57,13 @@ class db(object):
         """,
         """
         INSERT IGNORE INTO `hausschrat`
-            SET `setting` = 'expired',
+            SET `setting` = 'expire',
             `value` = '1w';
         """,
         """
         INSERT IGNORE INTO `hausschrat`
-            SET `setting` = 'strict_user',
-            `value` = 'yes';
+            SET `setting` = 'mode',
+            `value` = 'user';
         """,
         """
         INSERT IGNORE INTO `hausschrat`
@@ -72,7 +72,7 @@ class db(object):
         ""","""
         INSERT IGNORE INTO `hausschrat`
             SET `setting` = 'scm_url',
-            `value` = 'gitlab.com';
+            `value` = 'https://gitlab.com';
         ""","""
         INSERT IGNORE INTO `hausschrat`
             SET `setting` = 'auth_vendor',
@@ -107,6 +107,13 @@ class db(object):
             return retval[0][0]
         except:
             return None
+
+    def get_settings(self):
+        sql = "select setting, value from hausschrat;"
+        with self.db.cursor() as cursor:
+            cursor.execute(sql)
+            retval = cursor.fetchall()
+        return dict(retval)
 
     def revoked_certs(self):
         sql = """

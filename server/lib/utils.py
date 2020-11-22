@@ -5,6 +5,7 @@ import pexpect
 import requests
 import os
 import time
+from lib import db
 
 from lib.vendors import nextcloud, aws
 
@@ -38,21 +39,21 @@ def detect_scm(scm_url):
     
 class keyHandling(object):
 
-    def __init__(self, pub_key, user, expire, mariadb):
+    def __init__(self, pub_key, user, expire, settings):
         self.priv_key_location = '/tmp/priv_key'
         self.user = user
-        self.mariadb = mariadb
         self.pub_key = pub_key
-        vendor = mariadb.get_value('auth_vendor')
-        if vendor == 'nextcloud':
+        self.settings = settings
+
+        if settings.get('auth_vendor') == 'nextcloud':
             self.vault = nextcloud.vault(
-                mariadb.get_value('vendor_key_location'),
-                mariadb.get_value('vendor_password_name')
+                settings.get('vendor_key_location'),
+                settings.get('vendor_password_name')
             )
-        elif vendor == 'aws':
+        elif settings.get('auth_vendor') == 'aws':
             self.vault = aws.vault()
 
-        default_exire = mariadb.get_value('expired')
+        default_exire = settings.get('expire')
         requested_expire = expire
         
         if convert_to_seconds(default_exire) < convert_to_seconds(requested_expire):
@@ -83,7 +84,7 @@ class keyHandling(object):
 
     def sign_key(self):
 
-        authority_name = self.mariadb.get_value('authority_name')
+        authority_name = self.settings.get('authority_name')
 
         expire_datetime = str(
             datetime.fromtimestamp(
@@ -106,7 +107,10 @@ class keyHandling(object):
 
         with open(self.pub_cert_file, 'r') as f:
             cert = f.read()
-        self.mariadb.save_cert(self.pub_key, self.user, expire_datetime)
+        
+        mariadb = db.db()
+        mariadb.save_cert(self.pub_key, self.user, expire_datetime)
+        mariadb.close()
         os.remove(self.pub_key_file)
         os.remove(self.pub_cert_file)
         os.remove(self.priv_key_location)
