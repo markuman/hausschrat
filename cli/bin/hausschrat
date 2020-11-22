@@ -1,9 +1,8 @@
 #!/usr/bin/env python
-import hug
-import requests
-import yaml
 import sys
 import os
+import requests
+import yaml
 
 def merge_dicts(config, defaults):
     for k in defaults:
@@ -26,10 +25,11 @@ def _help():
     print("""
 USAGE:        
 hausschrat <profile>
-hausschrat -v
-hausschrat -h
+hausschrat -v (--version)
+hausschrat -h (--help)
 
 config location: ~/.config/hausschrat.yml
+
     """)
 
 def request(config):
@@ -41,6 +41,7 @@ def request(config):
     if response.status_code == 200:
         with open(config.get('cert_file').replace('~', os.getenv("HOME")), 'w') as cert_file:
             cert_file.write(response.json().get('cert'))
+        print('done')
 
 
 
@@ -60,4 +61,5 @@ if __name__ == "__main__":
         sys.exit(1)
 
     config = load_config(profile)
+    print('start issueing certificate for {PROFILE}'.format(PROFILE=profile))
     request(config)
