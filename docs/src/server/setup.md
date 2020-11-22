@@ -8,4 +8,5 @@ Once it's started, it creates two tables.
 2. `certs`
 
 The `hausschrat table is where the configuration lives.  
-The `certs` table is where all cert public keys will be stored.
+The `certs` table is where all public keys will be stored where _hausschrat_ has issued a certificate.  
+This is essential to generate revoke files.
