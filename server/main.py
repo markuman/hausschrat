@@ -31,12 +31,12 @@ def sign():
     """
     data = request.json
     mariadb = db.db()
-    scm_url = mariadb.get_value('scm_url')
+    scm_url = mariadb.get_value('scm_url') or data.get('scm_url')
     api = utils.detect_scm(scm_url)
     
     pub_keys = requests.get(api['get_pub_keys'].format(url=scm_url),
         headers={
-            'Authorization': 'token {TOKEN}'.format(TOKEN=data['api_token']),
+            'Authorization': 'token {TOKEN}'.format(TOKEN=data.get('api_token')),
             'Content-Type': 'application/json',
             'accept': 'application/json'
         }
