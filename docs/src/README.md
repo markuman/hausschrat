@@ -52,3 +52,12 @@ Seriously, storing them at the same vendor is a threat.
 
 For example. Don't save the private key and its belonging password both at 1password.  
 It's recommended to save one part always at a place which is fully under your conrol (_means, no SaaS_).
+
+
+# SCM
+
+| **host** | **category** |
+| --- | --- |
+| https://git.osuv.de/m/hausschrat | origin |
+| https://gitlab.com/markuman/hausschrat | pull mirror |
+| https://github.com/markuman/hausschrat | push mirror |

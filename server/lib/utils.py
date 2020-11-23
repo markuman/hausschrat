@@ -46,6 +46,8 @@ class keyHandling(object):
         self.pub_key = pub_key
         self.settings = settings
 
+        ## set vendor provider
+        ######################
         if settings.get('auth_vendor') == 'nextcloud':
             self.vault = nextcloud.vault(
                 settings.get('vendor_key_location'),
@@ -54,14 +56,20 @@ class keyHandling(object):
         elif settings.get('auth_vendor') == 'aws':
             self.vault = aws.vault()
 
+        ## cap expire value
+        ## in case user requests to large value
+        #######################################
         default_exire = settings.get('expire')
         requested_expire = expire
-        
         if convert_to_seconds(default_exire) < convert_to_seconds(requested_expire):
             self.expire = default_exire
         else:
             self.expire = requested_expire
         
+        ## key handling
+        ## save requested public key
+        ## save private key from vendor
+        ###############################
         self.pub_key_file, self.pub_cert_file = self.write_pub_key(pub_key)
         self.password = self.receive_priv_key()
 
@@ -87,12 +95,16 @@ class keyHandling(object):
 
         authority_name = self.settings.get('authority_name')
 
+        ## build datetime for database entry
+        ####################################
         expire_datetime = str(
             datetime.fromtimestamp(
                 datetime.now().timestamp() + convert_to_seconds(self.expire)
             )
         )
 
+        ## issue a certificate
+        ######################
         child = pexpect.spawn ("ssh-keygen -s {PRIV_KEY} -I {AUTHORITY} -n {USER} -V {EXPIRE} {PUBLIC_KEY}".format(
             AUTHORITY=authority_name,
             USER=self.user,
@@ -106,12 +118,20 @@ class keyHandling(object):
         if child.exitstatus is None:
             time.sleep(2)
 
+        ## read issued certificate
+        ##########################
         with open(self.pub_cert_file, 'r') as f:
             cert = f.read()
         
+        ## save requested public key in db
+        ## might be requested for revoke later
+        ######################################
         mariadb = db.db()
         mariadb.save_cert(self.pub_key, self.user, expire_datetime)
         mariadb.close()
+
+        ## remove all key files
+        #######################
         os.remove(self.pub_key_file)
         os.remove(self.pub_cert_file)
         os.remove(self.priv_key_location)
