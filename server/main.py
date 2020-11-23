@@ -3,6 +3,7 @@ from uuid import uuid4
 import urllib
 import requests
 from lib import db
+from lib import dbv2
 from lib import utils
 import logging
 import os
@@ -46,9 +47,7 @@ def sign():
     """
 
     data = request.json
-    mariadb = db.db()
-    settings = mariadb.get_settings()
-    mariadb.close()
+    settings = dbv2.get_settings()
     scm_url = settings.get('scm_url') or data.get('scm_url')
     
     if scm_url is None:
@@ -102,7 +101,7 @@ def sign():
             ## server mode is not strict_user
             ## issue a certificate
             ##################################
-            elif mariadb.get_value('mode') in ['open', 'host']:
+            elif settings.get('mode') in ['open', 'host']:
                 logger.info(" process certificate issue from {IP}".format(IP=client_ip))
                 kh = utils.keyHandling(pub_key, data.get('username'), expire, settings)
                 cert = kh.sign_key()
@@ -122,7 +121,5 @@ def sign():
 
 
 if __name__ == '__main__':
-    mariadb = db.db()
-    mariadb.init_db()
-    mariadb.close()
+    dbv2.init()
     run(host='0.0.0.0', port=8080)
