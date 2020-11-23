@@ -12,7 +12,7 @@ if os.environ.get('MARIADB_HOST'):
     )
 
 elif os.environ.get('POSTGRES_HOST'):
-    db = peewee.MySQLDatabase(
+    db = peewee.PostgresqlDatabase(
         "hausschrat",
         host=os.environ.get('POSTGRES_HOST'),
         port=5432,
