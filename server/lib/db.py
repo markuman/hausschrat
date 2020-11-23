@@ -40,7 +40,7 @@ class db(object):
                 signed datetime not null default now(),
                 expired datetime not null,
                 revoked bool not null default 0,
-                pub_key varchar(256) not null,
+                pub_key varchar(400) not null,
                 PRIMARY KEY(id)
             ) 
                 ENGINE=InnoDB;
@@ -117,7 +117,7 @@ class db(object):
 
     def revoked_certs(self):
         sql = """
-        select cert from certs where expired > now() and revoked = 1;
+        select pub_key from certs where expired > now() and revoked = 1;
         """
         with self.db.cursor() as cursor:
             cursor.execute(sql)
