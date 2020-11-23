@@ -37,7 +37,65 @@ def detect_scm(scm_url):
             'check_user': '{url}/api/v4/user',
             'get_pub_keys': '{url}/api/v4/user/keys'
         }
+
+def process_revoked_public_key(logger):
+    mariadb = db.db()
+    revoked_pub_keys = mariadb.revoked_certs()
+    mariadb.close()
+    revoke_file = "/tmp/revoked_keys"
+    logger.info( "found {COUNT} revoked keys".format(COUNT=len(revoked_pub_keys)))
+    remove_list = list()
+
+    if len(revoked_pub_keys) > 0:
+
+        if os.path.exists(revoke_file):
+            os.remove(revoke_file)
+        
+        pub_key_file, doesnmatter = write_pub_key(revoked_pub_keys[0][0])
+        
+        os.popen("ssh-keygen -kf {RF} -z 1 {PKF}".format(
+            RF=revoke_file,
+            PKF=pub_key_file
+        ))
+
+        remove_list.append(pub_key_file)
+
+    else:
+        return None
+
+    if len(revoked_pub_keys) > 1:
+        n = 1
+        while n < len(revoked_pub_keys):
+            pub_key_file, doesnmatter = write_pub_key(revoked_pub_keys[n][0])
+
+            n += 1
+            os.popen("ssh-keygen -ukf {RF} -z {n} {PKF}".format(
+                RF=revoke_file,
+                PKF=pub_key_file,
+                n=n
+            ))
+
+            remove_list.append(pub_key_file)
+
+    time.sleep(1) # lol it's to fast and ssh-keygen stale something ...
+    for item in remove_list:
+        logger.info("delete {file}".format(file=item))
+        os.remove(item)
+
+    return revoke_file
+
     
+
+def write_pub_key(pub_key):
+    pub_key_file = "/tmp/{name}".format(name=next(tempfile._get_candidate_names())) + '.pub'
+    with open(pub_key_file, 'w' ) as f:
+        f.write(pub_key)
+
+    parts = pub_key_file.split(".")
+    cert_key_file = parts[0] + "-cert." + parts[1]
+
+    return pub_key_file, cert_key_file
+
 class keyHandling(object):
 
     def __init__(self, pub_key, user, expire, settings):
@@ -70,19 +128,11 @@ class keyHandling(object):
         ## save requested public key
         ## save private key from vendor
         ###############################
-        self.pub_key_file, self.pub_cert_file = self.write_pub_key(pub_key)
+        self.pub_key_file, self.pub_cert_file = write_pub_key(pub_key)
         self.password = self.receive_priv_key()
 
 
-    def write_pub_key(self, pub_key):
-        pub_key_file = "/tmp/{name}".format(name=next(tempfile._get_candidate_names())) + '.pub'
-        with open(pub_key_file, 'w' ) as f:
-            f.write(pub_key)
 
-        parts = pub_key_file.split(".")
-        cert_key_file = parts[0] + "-cert." + parts[1]
-
-        return pub_key_file, cert_key_file
 
     def receive_priv_key(self):
         priv_key = self.vault.key()

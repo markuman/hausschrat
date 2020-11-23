@@ -14,6 +14,16 @@ logger = logging.getLogger('hausschrat')
 def oh_hai():
 	return HTTPResponse(status=200)
 
+@route('/revoke')
+def revoke():
+    retval = utils.process_revoked_public_key(logger)
+    logger.info(retval)
+    if retval:
+        return static_file("revoked_keys", root="/tmp")
+
+    logger.error(" no revoked keys available")
+    return HTTPResponse(status=404)
+    
 @route('/sign', method='POST')
 def sign():
     """
