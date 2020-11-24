@@ -2,25 +2,8 @@
 
 # hausschrat
 
-The most easiest SSH CA which runs everywhere.
+The most easiest SSH CA I can think of.
 
-**features**
-- based on source-code hosting platforms
-  - GitLab
-  - Gitea
-- User CLI
-- Ansible-Integration
-  - Templates for revoke cert orchestration
-- Runs everywhere
-  - Cloud
-  - on-premise
-  - Container
-      * Docker (Swarm Mode)
-      * k8s/k3s
-      * AWS ECS (Fargate)
-- Included vault providers (_easy to expand (bring your own vault_)
-  - Nextcloud
-  - AWS
 
 # design
 
