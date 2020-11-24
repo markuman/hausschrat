@@ -42,6 +42,9 @@ def request(config):
         with open(config.get('cert_file').replace('~', os.getenv("HOME")), 'w') as cert_file:
             cert_file.write(response.json().get('cert'))
         print('done')
+    else:
+        print('issuing failed with status code {SC}'.format(SC=response.status_code))
+        sys.exit(1)
 
 
 
