@@ -11,6 +11,24 @@ You only need to glue things together. Here comes _hausschrat_ to play.
 
 A user needs to create an access token in their SCM Tool with `read_user` permissions only. With this access token, _hausschrat_ can verify the user, fetch the users belonging public key, sign them and response with the certificate.
 
+# CLI - request a certificate
+
+```yml
+default:
+  server: http://localhost:8080
+  scm_url: https://git.osuv.de
+  api_token: ...
+  user: m
+  key: markus@dell
+  expire: +5h
+  cert_file: ~/.ssh/test-cert.pub
+```
+
+```shell
+$ hausschrat
+start issueing certificate for default
+done
+```
 
 # SCM
 
