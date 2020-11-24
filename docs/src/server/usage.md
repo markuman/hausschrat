@@ -3,11 +3,9 @@
 For security reason, there is nor admin webinterface nor admin cli.  
 To configure and administrate _hausschrat_ all you need is
 
-- a mariadb client
-  * mysql or mariadb cli
-  * mycli
+- a sql client
   * dbeaver
-  * ... yes, also properitary clients will work but are not recommended!
+  * etc pp
 - sql skills (_in case that your prefered sql client does not have a gui_)
 
 # Settings
@@ -17,7 +15,7 @@ The default values works well for most use cases.
 * You may like to change the `authority_name` or the `expire` value.  
 * You like to change the `scm_url`.
 * You must add/provide
-    * `auth_vendor`
+    * `vendor`
     * `vendor_key_location`
     * `vendor_password_name`
 
@@ -57,8 +55,8 @@ When `scm_url` is set (_e.g. to `https://gitlab.com`), _hausschrat_ will only re
 source conrole managment tools are forbidden (_return status code 403_).
 
 
-**`auth_vendor`**  
-Default value: `nextcloud`
+**`vendor`**  
+Default value: `mixed`
 
 Defines which vendors `vault` class is used.  
 It must be exist in `lib/vendors`.
@@ -76,7 +74,7 @@ Default value: _not set_
 The location the the password for the private key for the used vendor.
 
 
-**`hausschrat_public_key`**  
+**`public_key`**  
 Default value: _not set_
 
 This is the placeholder to the CA public key. You don't nedd and should not care about it.  
@@ -93,3 +91,26 @@ Now you can request `https://{HAUSSCHRAT_URL}/revoke` with your orchestration an
 
 You can also use the API endpoint `/public_key` in your orchestration to fetch the CA public key and announce it to the sshd.  
 Once it is fetched and regenerated, it will be stored in the `hausschrat` table - for performance issue.
+
+# Orchestrate revoke_file
+
+Can be done with any orchestration tool...  
+For example - ansible
+
+```yml
+---
+- hosts: all
+  gather_facts: no
+
+  vars:
+    HAUSSCHRAT_URL: http://localhost:8080
+
+  tasks:
+    - name: fetch revoke file
+      uri:
+        url: "{{ HAUSSCHRAT_URL }}/revoke"
+        dest: /etc/ssh/revoked_keys
+      become: yes
+```
+
+`ansible-playbook -i inventories/all_your_hosts.ini revoke_orchestration.yml`
