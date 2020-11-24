@@ -44,7 +44,7 @@ class Keys(peewee.Model):
 
 
 def init():
-    db.connect()
+    db.connect() # valid because it's init()
     Hausschrat.create_table()
     Keys.create_table()
 
@@ -68,12 +68,10 @@ def init():
             except:
                 pass
 
-    db.close()
+    db.close() # valid because it's init()
 
 def get_settings():
-    db.connect()
     retval = list(Hausschrat.select().dicts())
-    db.close()
     d = dict()
     for item in retval:
         d[item.get('name')] = item.get('value')

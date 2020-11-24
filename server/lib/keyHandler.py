@@ -10,6 +10,37 @@ from lib import dbv2
 from lib import utils
 from lib.vendors import nextcloud, aws
 
+priv_key_location = '/tmp/priv_key'
+
+def receive_priv_key(vault):
+    priv_key = vault.key()
+    with open(priv_key_location, 'w' ) as f:
+        f.write(priv_key.decode('utf-8'))
+    os.chmod(priv_key_location, 0o600)
+    return vault.password()
+
+def private_key():
+    settings = dbv2.get_settings()
+
+    ## set vendor provider
+    ######################
+    if settings.get('vendor') == 'nextcloud':
+        vault = nextcloud.vault(
+            settings.get('vendor_key_location'),
+            settings.get('vendor_password_name')
+        )
+    elif settings.get('auth_vendor') == 'aws':
+        vault = aws.vault()
+
+    password = receive_priv_key(vault)
+
+    child = pexpect.spawn ('ssh-keygen -y -f {KEY}'.format(KEY=priv_key_location))
+    child.expect('Enter passphrase: ')
+    child.sendline (password)
+    retval = child.read().decode('utf-8').strip()
+    os.remove(priv_key_location)
+    return retval
+
 class keyHandling(object):
 
     def __init__(self, pub_key, user, expire, settings):
@@ -43,15 +74,7 @@ class keyHandling(object):
         ## save private key from vendor
         ###############################
         self.pub_key_file, self.pub_cert_file = utils.write_pub_key(pub_key)
-        self.password = self.receive_priv_key()
-
-
-    def receive_priv_key(self):
-        priv_key = self.vault.key()
-        with open(self.priv_key_location, 'w' ) as f:
-            f.write(priv_key.decode('utf-8'))
-        os.chmod(self.priv_key_location, 0o600)
-        return self.vault.password()
+        self.password = receive_priv_key(self.vault)
 
     def sign_key(self):
 
@@ -67,12 +90,12 @@ class keyHandling(object):
 
         ## issue a certificate
         ######################
-        child = pexpect.spawn ("ssh-keygen -s {PRIV_KEY} -I {AUTHORITY} -n {USER} -V {EXPIRE} {PUBLIC_KEY}".format(
+        child = pexpect.spawn("ssh-keygen -s {PRIV_KEY} -I {AUTHORITY} -n {USER} -V {EXPIRE} {PUBLIC_KEY}".format(
             AUTHORITY=authority_name,
             USER=self.user,
             EXPIRE=self.expire,
             PUBLIC_KEY=self.pub_key_file,
-            PRIV_KEY=self.priv_key_location
+            PRIV_KEY=priv_key_location
         ))
         child.expect ('Enter passphrase: ')
         child.sendline (self.password)
@@ -90,7 +113,7 @@ class keyHandling(object):
         ######################################
         Keys = dbv2.Keys()
         data = Keys.create(
-            name=self.user,
+            user=self.user,
             pub_key=self.pub_key,
             expire=expire_datetime,
         )
@@ -100,7 +123,7 @@ class keyHandling(object):
         #######################
         os.remove(self.pub_key_file)
         os.remove(self.pub_cert_file)
-        os.remove(self.priv_key_location)
+        os.remove(priv_key_location)
 
         return cert
         

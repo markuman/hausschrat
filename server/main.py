@@ -1,4 +1,4 @@
-from bottle import route, request, HTTPResponse, static_file, run
+from bottle import route, request, HTTPResponse, static_file, run, hook
 from uuid import uuid4
 import urllib
 import requests
@@ -11,9 +11,22 @@ import os
 logging.basicConfig(level=os.environ.get("LOGLEVEL", "INFO"))
 logger = logging.getLogger('hausschrat')
 
+@hook('before_request')
+def _connect_db():
+    dbv2.db.connect()
+
+@hook('after_request')
+def _close_db():
+    if not dbv2.db.is_closed():
+        dbv2.db.close()
+
 @route('/')
 def oh_hai():
 	return HTTPResponse(status=200)
+
+@route('/public_key')
+def public_key():
+    return keyHandler.private_key()
 
 @route('/revoke')
 def revoke():
