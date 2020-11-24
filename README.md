@@ -1,6 +1,6 @@
 # hausschrat
 
-The most easiest SSH CA which runs everywhere.
+The most easiest SSH CA I can think of.
 
 # design
 
