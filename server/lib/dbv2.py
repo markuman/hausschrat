@@ -25,7 +25,7 @@ else:
 
 class Hausschrat(peewee.Model):
     name = peewee.CharField(unique=True, primary_key=True)
-    value = peewee.CharField()
+    value = peewee.CharField(max_length=600)
 
     class Meta:
         database = db
@@ -33,7 +33,7 @@ class Hausschrat(peewee.Model):
 
 class Keys(peewee.Model):
     user = peewee.CharField()
-    pub_key = peewee.CharField()
+    pub_key = peewee.CharField(max_length=600)
     signed = peewee.DateTimeField(default=datetime.now)
     expire = peewee.DateTimeField()
     revoked = peewee.BooleanField(default=False)

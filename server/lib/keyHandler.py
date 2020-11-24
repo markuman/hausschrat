@@ -19,8 +19,11 @@ def receive_priv_key(vault):
     os.chmod(priv_key_location, 0o600)
     return vault.password()
 
-def private_key():
+def public_key():
     settings = dbv2.get_settings()
+
+    if pk := settings.get('public_key'):
+        return pk
 
     ## set vendor provider
     ######################
@@ -39,6 +42,9 @@ def private_key():
     child.sendline (password)
     retval = child.read().decode('utf-8').strip()
     os.remove(priv_key_location)
+    Hausschrat = dbv2.Hausschrat
+    data = Hausschrat.create(name='public_key', value=retval)
+    data.save()
     return retval
 
 class keyHandling(object):

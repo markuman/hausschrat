@@ -26,7 +26,7 @@ def oh_hai():
 
 @route('/public_key')
 def public_key():
-    return keyHandler.private_key()
+    return keyHandler.public_key()
 
 @route('/revoke')
 def revoke():
