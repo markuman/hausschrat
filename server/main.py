@@ -2,9 +2,9 @@ from bottle import route, request, HTTPResponse, static_file, run
 from uuid import uuid4
 import urllib
 import requests
-from lib import db
 from lib import dbv2
 from lib import utils
+from lib import keyHandler
 import logging
 import os
 
@@ -94,7 +94,7 @@ def sign():
             #######################
             if data.get('username') is None or data.get('username') == user:
                 logger.info(" process certificate issue from {IP}".format(IP=client_ip))
-                kh = utils.keyHandling(pub_key, user, expire, settings)
+                kh = keyHandler.keyHandling(pub_key, user, expire, settings)
                 cert = kh.sign_key()
                 return { 'cert': cert}
 
@@ -103,7 +103,7 @@ def sign():
             ##################################
             elif settings.get('mode') in ['open', 'host']:
                 logger.info(" process certificate issue from {IP}".format(IP=client_ip))
-                kh = utils.keyHandling(pub_key, data.get('username'), expire, settings)
+                kh = keyHandler.keyHandling(pub_key, data.get('username'), expire, settings)
                 cert = kh.sign_key()
                 return { 'cert': cert}
             

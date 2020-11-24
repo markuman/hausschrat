@@ -32,11 +32,11 @@ class Hausschrat(peewee.Model):
         db_table = 'hausschrat'
 
 class Keys(peewee.Model):
-    user = peewee.CharField(unique=True)
+    user = peewee.CharField()
     pub_key = peewee.CharField()
     signed = peewee.DateTimeField(default=datetime.now)
     expire = peewee.DateTimeField()
-    revoked = peewee.BooleanField()
+    revoked = peewee.BooleanField(default=False)
 
     class Meta:
         database = db
@@ -50,7 +50,6 @@ def init():
 
     retval = Hausschrat.select()
     if retval.count() == 0:
-        print(retval.count())
 
         defaults = [
             {'name': 'expire', 'value': '+1w'},
@@ -81,5 +80,32 @@ def get_settings():
     return d
 
 
-    
+if __name__ == '__main__':
+    init()
+
+    # works fine
+    data = list(Keys().select().dicts())
+    print(data)
+
+    data = Keys.create(
+        name='m',
+        pub_key='sowas',
+        signed=datetime.now(),
+        expire=datetime.now(),
+    )
+    data.save()
+
+    data = Keys.create(
+        name='m',
+        pub_key='nicht',
+        signed=datetime.now(),
+        expire=datetime.now(),
+        revoked=True
+    )
+    data.save()
+
+
+    # dafuq?
+    data = list(Keys().select(Keys.pub_key).where(Keys.revoked == True).dicts())
+    print(data)
 

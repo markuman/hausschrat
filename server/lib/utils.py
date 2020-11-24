@@ -1,16 +1,12 @@
 import tempfile
 from datetime import timedelta
 from datetime import datetime
-import pexpect
 import requests
 import os
 import time
-
-from lib import db
-from lib.vendors import nextcloud, aws
+from lib import dbv2
 
 UNITS = {"m":"minutes", "h":"hours", "d":"days", "w":"weeks"}
-
 def convert_to_seconds(s):
     count = int(s[:-1])
     unit = UNITS[ s[-1] ]
@@ -39,9 +35,8 @@ def detect_scm(scm_url):
         }
 
 def process_revoked_public_key(logger):
-    mariadb = db.db()
-    revoked_pub_keys = mariadb.revoked_certs()
-    mariadb.close()
+    keys = dbv2.Keys()
+    revoked_pub_keys = list(keys.select(keys.pub_key).where(keys.revoked == True).dicts())
     revoke_file = "/tmp/revoked_keys"
     logger.info( "found {COUNT} revoked keys".format(COUNT=len(revoked_pub_keys)))
     remove_list = list()
@@ -51,7 +46,7 @@ def process_revoked_public_key(logger):
         if os.path.exists(revoke_file):
             os.remove(revoke_file)
         
-        pub_key_file, doesnmatter = write_pub_key(revoked_pub_keys[0][0])
+        pub_key_file, doesnmatter = write_pub_key(revoked_pub_keys[0].get('pub_key'))
         
         os.popen("ssh-keygen -kf {RF} -z 1 {PKF}".format(
             RF=revoke_file,
@@ -66,7 +61,7 @@ def process_revoked_public_key(logger):
     if len(revoked_pub_keys) > 1:
         n = 1
         while n < len(revoked_pub_keys):
-            pub_key_file, doesnmatter = write_pub_key(revoked_pub_keys[n][0])
+            pub_key_file, doesnmatter = write_pub_key(revoked_pub_keys[n].get('pub_key'))
 
             n += 1
             os.popen("ssh-keygen -ukf {RF} -z {n} {PKF}".format(
@@ -84,10 +79,11 @@ def process_revoked_public_key(logger):
 
     return revoke_file
 
-    
+def tmpname():
+    return "/tmp/{name}".format(name=next(tempfile._get_candidate_names()))
 
 def write_pub_key(pub_key):
-    pub_key_file = "/tmp/{name}".format(name=next(tempfile._get_candidate_names())) + '.pub'
+    pub_key_file = tmpname() + '.pub'
     with open(pub_key_file, 'w' ) as f:
         f.write(pub_key)
 
@@ -95,96 +91,3 @@ def write_pub_key(pub_key):
     cert_key_file = parts[0] + "-cert." + parts[1]
 
     return pub_key_file, cert_key_file
-
-class keyHandling(object):
-
-    def __init__(self, pub_key, user, expire, settings):
-        self.priv_key_location = '/tmp/priv_key'
-        self.user = user
-        self.pub_key = pub_key
-        self.settings = settings
-
-        ## set vendor provider
-        ######################
-        if settings.get('auth_vendor') == 'nextcloud':
-            self.vault = nextcloud.vault(
-                settings.get('vendor_key_location'),
-                settings.get('vendor_password_name')
-            )
-        elif settings.get('auth_vendor') == 'aws':
-            self.vault = aws.vault()
-
-        ## cap expire value
-        ## in case user requests to large value
-        #######################################
-        default_exire = settings.get('expire')
-        requested_expire = expire
-        if convert_to_seconds(default_exire) < convert_to_seconds(requested_expire):
-            self.expire = default_exire
-        else:
-            self.expire = requested_expire
-        
-        ## key handling
-        ## save requested public key
-        ## save private key from vendor
-        ###############################
-        self.pub_key_file, self.pub_cert_file = write_pub_key(pub_key)
-        self.password = self.receive_priv_key()
-
-
-
-
-    def receive_priv_key(self):
-        priv_key = self.vault.key()
-        with open(self.priv_key_location, 'w' ) as f:
-            f.write(priv_key.decode('utf-8'))
-        os.chmod(self.priv_key_location, 0o600)
-        return self.vault.password()
-
-    def sign_key(self):
-
-        authority_name = self.settings.get('authority_name')
-
-        ## build datetime for database entry
-        ####################################
-        expire_datetime = str(
-            datetime.fromtimestamp(
-                datetime.now().timestamp() + convert_to_seconds(self.expire)
-            )
-        )
-
-        ## issue a certificate
-        ######################
-        child = pexpect.spawn ("ssh-keygen -s {PRIV_KEY} -I {AUTHORITY} -n {USER} -V {EXPIRE} {PUBLIC_KEY}".format(
-            AUTHORITY=authority_name,
-            USER=self.user,
-            EXPIRE=self.expire,
-            PUBLIC_KEY=self.pub_key_file,
-            PRIV_KEY=self.priv_key_location
-        ))
-        child.expect ('Enter passphrase: ')
-        child.sendline (self.password)
-
-        if child.exitstatus is None:
-            time.sleep(2)
-
-        ## read issued certificate
-        ##########################
-        with open(self.pub_cert_file, 'r') as f:
-            cert = f.read()
-        
-        ## save requested public key in db
-        ## might be requested for revoke later
-        ######################################
-        mariadb = db.db()
-        mariadb.save_cert(self.pub_key, self.user, expire_datetime)
-        mariadb.close()
-
-        ## remove all key files
-        #######################
-        os.remove(self.pub_key_file)
-        os.remove(self.pub_cert_file)
-        os.remove(self.priv_key_location)
-
-        return cert
-        
