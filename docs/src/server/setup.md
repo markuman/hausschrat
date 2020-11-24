@@ -19,9 +19,9 @@ Basically that's all.
 
 ```
 docker run -ti --rm --name hausschrat \
-    -e DATABASE_HOST=some_host \
-    -e DATABASE_USER=hausschrat \
-    -e DATABASE_PASSWORD=some_password \
+    -e MARIADB_HOST=some_host \
+    -e MARIADB_USER=hausschrat \
+    -e MARIADB_PASSWORD=some_password \
     -p 8000:8000 \
     hausschrat:1
 ```
@@ -32,12 +32,20 @@ In case of Nextcloud, it looks like that:
 
 ```
 docker run -ti --rm --name hausschrat \
-    -e DATABASE_HOST=some_host \
-    -e DATABASE_USER=hausschrat \
-    -e DATABASE_PASSWORD=some_password \
+    -e MARIADB_HOST=some_host \
+    -e MARIADB_USER=hausschrat \
+    -e MARIADB_PASSWORD=some_password \
     -e NEXTCLOUD_HOST=nextcloud.domain.tld \
     -e NEXTCLOUD_USER=username \
     -e NEXTCLOUD_TOKEN=abc \
     -p 8000:8000 \
     hausschrat:1
 ```
+
+## backends
+
+_hausschrat_ supports mariadb, postgres or sqlite.
+
+When `MARIADB_HOST` is given, it uses mariadb/mysql.  
+When `POSTGRES_HOST` is given, it uses postgres.  
+When none is given, it uses sqlite in location `/opt/hausschrat/db.sqlite`
