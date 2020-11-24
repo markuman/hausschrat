@@ -8,9 +8,29 @@ import time
 
 from lib import dbv2
 from lib import utils
-from lib.vendors import nextcloud, aws
+from lib.vendors import nextcloud, aws, mixed
 
 priv_key_location = '/tmp/priv_key'
+
+def vault_handler(settings):
+    ## set vendor provider
+    ######################
+    if settings.get('vendor') == 'nextcloud':
+        vault = nextcloud.vault(
+            settings.get('vendor_key_location'),
+            settings.get('vendor_password_name')
+        )
+
+    elif settings.get('vendor') == 'aws':
+        vault = aws.vault()
+
+    elif settings.get('vendor') == 'mixed':
+        vault = mixed.vault(
+            settings.get('vendor_key_location'),
+            settings.get('vendor_password_name')
+        )
+
+    return vault
 
 def receive_priv_key(vault):
     priv_key = vault.key()
@@ -25,15 +45,7 @@ def public_key():
     if pk := settings.get('public_key'):
         return pk
 
-    ## set vendor provider
-    ######################
-    if settings.get('vendor') == 'nextcloud':
-        vault = nextcloud.vault(
-            settings.get('vendor_key_location'),
-            settings.get('vendor_password_name')
-        )
-    elif settings.get('auth_vendor') == 'aws':
-        vault = aws.vault()
+    vault = vault_handler(settings)
 
     password = receive_priv_key(vault)
 
@@ -54,16 +66,7 @@ class keyHandling(object):
         self.user = user
         self.pub_key = pub_key
         self.settings = settings
-
-        ## set vendor provider
-        ######################
-        if settings.get('vendor') == 'nextcloud':
-            self.vault = nextcloud.vault(
-                settings.get('vendor_key_location'),
-                settings.get('vendor_password_name')
-            )
-        elif settings.get('auth_vendor') == 'aws':
-            self.vault = aws.vault()
+        self.vault = vault_handler(settings)
 
         ## cap expire value
         ## in case user requests to large value

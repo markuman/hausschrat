@@ -57,7 +57,7 @@ def init():
             {'name': 'authority_name', 'value': 'hausschrat'},
             {'name': 'scm_url', 'value': 'https://gitlab.com'},
             {'name': 'vendor', 'value': 'mixed'},
-            {'name': 'vendor_key_location', 'value': "{'bucket': 'hausschrat', 'obj': '/hausschrat.pem'}"},
+            {'name': 'vendor_key_location', 'value': '{"bucket": "hausschrat", "obj": "/hausschrat.pem"}'},
             {'name': 'vendor_password_name', 'value': 'hausschrat'},
         ]
 
