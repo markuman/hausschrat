@@ -1,3 +1,5 @@
+# DRAFT
+
 # hausschrat
 
 The most easiest SSH CA which runs everywhere.
@@ -6,7 +8,7 @@ The most easiest SSH CA which runs everywhere.
 - based on source-code hosting platforms
   - GitLab
   - Gitea
-- CLI
+- User CLI
 - Ansible-Integration
   - Templates for revoke cert orchestration
 - Runs everywhere
