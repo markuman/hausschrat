@@ -40,24 +40,6 @@ def revoke():
     
 @route('/sign', method='POST')
 def sign():
-    """
-        data requested by user
-
-        data:
-            key: ssh key name
-            api_token: Access token with read_user permissions
-
-            scm_url: optional
-            username: requires `mode: open or host` server settings
-            expire: user value <= server default value
-
-
-        1. determin if it's a gitea or a gitlab instance
-        2. validate api_token and fetch ssh public keys
-            * in one step. when the api_token is invalid, server will response != 200
-        3. search for ssh key name in response ssh public keys
-            * when found, sign public key and return public-cert key.
-    """
 
     data = request.json
     settings = dbv2.get_settings()
@@ -104,6 +86,8 @@ def sign():
 
             ## strict_user mode.
             ## issue a certificate
+            ## for user that owns
+            ## the api key
             #######################
             if data.get('username') is None or data.get('username') == user:
                 logger.info(" process certificate issue from {IP}".format(IP=client_ip))
@@ -113,6 +97,8 @@ def sign():
 
             ## server mode is not strict_user
             ## issue a certificate
+            ## any user that is requested can
+            ## issue a certificate.
             ##################################
             elif settings.get('mode') in ['open', 'host']:
                 logger.info(" process certificate issue from {IP}".format(IP=client_ip))
