@@ -89,7 +89,7 @@ def sign():
             ## for user that owns
             ## the api key
             #######################
-            if data.get('username') is None or data.get('username') == user:
+            if data.get('user') is None or data.get('user') == user:
                 logger.info(" process certificate issue from {IP}".format(IP=client_ip))
                 kh = keyHandler.keyHandling(pub_key, user, expire, settings)
                 cert = kh.sign_key()
@@ -102,7 +102,7 @@ def sign():
             ##################################
             elif settings.get('mode') in ['open', 'host']:
                 logger.info(" process certificate issue from {IP}".format(IP=client_ip))
-                kh = keyHandler.keyHandling(pub_key, data.get('username'), expire, settings)
+                kh = keyHandler.keyHandling(pub_key, data.get('user'), expire, settings)
                 cert = kh.sign_key()
                 return { 'cert': cert}
             
