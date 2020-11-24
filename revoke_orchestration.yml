@@ -1,0 +1,14 @@
+---
+- hosts: all
+  gather_facts: no
+
+  vars:
+    HAUSSCHRAT_URL: http://localhost:8080
+
+  tasks:
+    - name: fetch revoke file
+      uri:
+        url: "{{ HAUSSCHRAT_URL }}/revoke"
+        dest: /etc/ssh/revoked_keys
+      become: yes
+
