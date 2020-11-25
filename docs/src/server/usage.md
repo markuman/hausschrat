@@ -92,26 +92,3 @@ Now you can request `https://{HAUSSCHRAT_URL}/revoke` with your orchestration an
 
 You can also use the API endpoint `/public_key` in your orchestration to fetch the CA public key and announce it to the sshd.  
 Once it is fetched and regenerated, it will be stored in the `hausschrat` table - for performance issue.
-
-# Orchestrate revoke_file
-
-Can be done with any orchestration tool...  
-For example - ansible
-
-```yml
----
-- hosts: all
-  gather_facts: no
-
-  vars:
-    HAUSSCHRAT_URL: http://localhost:8080
-
-  tasks:
-    - name: fetch revoke file
-      uri:
-        url: "{{ HAUSSCHRAT_URL }}/revoke"
-        dest: /etc/ssh/revoked_keys
-      become: yes
-```
-
-`ansible-playbook -i inventories/all_your_hosts.ini revoke_orchestration.yml`
