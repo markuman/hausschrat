@@ -42,7 +42,8 @@ def receive_priv_key(vault):
 def public_key():
     settings = dbv2.get_settings()
 
-    if pk := settings.get('public_key'):
+    pk = settings.get('public_key')
+    if pk:
         return pk
 
     vault = vault_handler(settings)
