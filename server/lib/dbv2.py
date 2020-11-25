@@ -1,6 +1,7 @@
 from datetime import datetime
 import peewee
 import os
+import json
 
 if os.environ.get('MARIADB_HOST'):
     db = peewee.MySQLDatabase(
@@ -51,14 +52,23 @@ def init():
     retval = Hausschrat.select()
     if retval.count() == 0:
 
+        lesspass_default_profile = {'login': 'hausschrat',
+                                'site': 'http://localhost:8080',
+                                'lowercase': True,
+                                'uppercase': True,
+                                'symbols': True,
+                                'digits': True,
+                                'counter': 1,
+                                'length': 32}
+
         defaults = [
             {'name': 'expire', 'value': '+1w'},
             {'name': 'mode', 'value': 'user'},
             {'name': 'authority_name', 'value': 'hausschrat'},
             {'name': 'scm_url', 'value': 'https://gitlab.com'},
-            {'name': 'vendor', 'value': 'mixed'},
-            {'name': 'vendor_key_location', 'value': '{"bucket": "hausschrat", "obj": "/hausschrat.pem"}'},
-            {'name': 'vendor_password_name', 'value': 'hausschrat'},
+            {'name': 'vendor', 'value': 'default'},
+            {'name': 'vendor_key_obj', 'value': '/hausschrat/hausschrat.pem'},
+            {'name': 'vendor_password_obj', 'value': json.dumps(lesspass_default_profile)},
         ]
 
         for item in defaults:
@@ -81,10 +91,7 @@ def get_settings():
 if __name__ == '__main__':
     init()
 
-    # works fine
     data = list(Keys().select().dicts())
-    print(data)
-
     data = Keys.create(
         name='m',
         pub_key='sowas',
@@ -102,8 +109,5 @@ if __name__ == '__main__':
     )
     data.save()
 
-
-    # dafuq?
     data = list(Keys().select(Keys.pub_key).where(Keys.revoked == True).dicts())
-    print(data)
 

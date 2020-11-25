@@ -1,9 +1,6 @@
-# DRAFT
-
 # hausschrat
 
-The most easiest SSH CA I can think of.
-
+The simplest SSH CA I can think of.
 
 # design
 
@@ -14,30 +11,30 @@ You only need to glue things together. Here comes _hausschrat_ to play.
 
 A user needs to create an access token in their SCM Tool with `read_user` permissions only. With this access token, _hausschrat_ can verify the user, fetch the users belonging public key, sign them and response with the certificate.
 
-## private key handling
+# Documentation
 
-_hausschrat_ nor generate a private key nor does it save the private key permanentely.  
-For every certificate issue it will fetch the private key and delete is afterwards.  
-Furthermore it will work only for private keys which are secured by a password.  
+Take a look at `docs/src/` folder or read it online: `https://hausschrat.eu`
 
-Therefore _hausschrat_ needs two things.  
+# CLI - request a certificate
 
-1. The private key
-2. The password for it
+Users just needs a `~/.config/hausschrat.yml` file.
 
-Both is fetched via vendors `vault` class.  
-Built-in (for demonstration) it supports  
-* Nextcloud (file and passwords)
-* AWS (S3 and SSM)
-* mixed (Private Key from S3, Password from Nextcloud)
+```yml
+default:
+  server: http://localhost:8080 # hausschrat backend
+  scm_url: https://git.osuv.de 
+  api_token: ... # go to your scm tool and create a `read_user` access token.
+  user: m
+  key: markus@dell
+  expire: +5h
+  cert_file: ~/.ssh/test-cert.pub 
+```
 
-For security reason, you should use a mixed `vault`. That garanties that the
-private key and its belonging password are stored at different locations.
-Seriously, storing them at the same vendor is a threat.
-
-For example. Don't save the private key and its belonging password both at 1password.  
-It's recommended to save one part always at a place which is fully under your conrol (_means, no SaaS_).
-
+```shell
+$ hausschrat
+start issuing certificate for default
+done
+```
 
 # SCM
 

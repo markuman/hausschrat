@@ -8,27 +8,21 @@ import time
 
 from lib import dbv2
 from lib import utils
-from lib.vendors import nextcloud, aws, mixed
+from lib.vendors import default
 
 priv_key_location = '/tmp/priv_key'
 
 def vault_handler(settings):
     ## set vendor provider
     ######################
-    if settings.get('vendor') == 'nextcloud':
-        vault = nextcloud.vault(
-            settings.get('vendor_key_location'),
-            settings.get('vendor_password_name')
+    if settings.get('vendor') == 'default':
+        vault = default.vault(
+            settings.get('vendor_key_obj'),
+            settings.get('vendor_password_obj')
         )
 
-    elif settings.get('vendor') == 'aws':
-        vault = aws.vault()
-
-    elif settings.get('vendor') == 'mixed':
-        vault = mixed.vault(
-            settings.get('vendor_key_location'),
-            settings.get('vendor_password_name')
-        )
+    else:
+        vault = __import__(settings.get('vendor'))
 
     return vault
 

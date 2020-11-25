@@ -1,2 +1,5 @@
 install:
-	pip3 install peewee bottle pexpect --user
+	pip3 install peewee bottle pexpect lesspass --user
+
+docker:
+	docker build -t hausschrat .

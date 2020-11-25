@@ -3,9 +3,9 @@
 For security reason, there is nor admin webinterface nor admin cli.  
 To configure and administrate _hausschrat_ all you need is
 
-- a sql client
-  * dbeaver
-  * etc pp
+- your favorite sql client
+  * dbeaver (_highly recommended when you need a gui_)
+  * mycli, sqlite3 ... etc. pp.
 - sql skills (_in case that your prefered sql client does not have a gui_)
 
 # Settings
@@ -16,8 +16,8 @@ The default values works well for most use cases.
 * You like to change the `scm_url`.
 * You must add/provide
     * `vendor`
-    * `vendor_key_location`
-    * `vendor_password_name`
+    * `vendor_key_obj`
+    * `vendor_password_obj`
 
 That's all.
 
@@ -40,6 +40,7 @@ Supported modes:
 * `host`: Certificates are only issued to a single host. The usename doesn't matter.
 * `open`: Everthing what is requested will be issues.
 
+`host` mode is not implemented yet is is equivalent to `open` mode.
 
 **`authority_name`**  
 Default value: `hausschrat`
@@ -56,30 +57,30 @@ source conrole managment tools are forbidden (_return status code 403_).
 
 
 **`vendor`**  
-Default value: `mixed`
+Default value: `default`
 
 Defines which vendors `vault` class is used.  
-It must be exist in `lib/vendors`.
 
 
-**`vendor_key_location`**  
-Default value: _not set_
+**`vendor_key_obj`**  
+Default value: `/hausschrat/hausschrat.pem`
 
-The location of the private key for the used vendor.
+The location of the private key for the used vendor.  
+Depends on your own vauld provider, it also can be a json object.
 
 
-**`vendor_password_name`**
-Default value: _not set_
+**`vendor_password_obj_`**
+Default value: `{"login": "hausschrat", "site": "http://localhost:8080", "lowercase": true, "uppercase": true, "symbols": true, "digits": true, "counter": 1, "length": 32}`
 
-The location the the password for the private key for the used vendor.
-
+JSON object for the default lesspass provider.  
+Depends on your own vauld provider, it also can be just a string.
 
 **`public_key`**  
 Default value: _not set_
 
-This is the placeholder to the CA public key. You don't nedd and should not care about it.  
+This is the placeholder to the CA public key. You don't need and should not care about it.  
 Once it is requested, _hausschrat_ will fetch the private key again, re-generate the public key and
-save it there for performance reasons.
+save it there for performance reasons (_caching_).
 
 # Revoke
 

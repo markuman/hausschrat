@@ -37,7 +37,7 @@ def detect_scm(scm_url):
 def process_revoked_public_key(logger):
     keys = dbv2.Keys
     revoked_pub_keys = list(keys.select(keys.pub_key).where(keys.revoked == True).dicts())
-    print(revoked_pub_keys)
+
     revoke_file = "/tmp/revoked_keys"
     logger.info( "found {COUNT} revoked keys".format(COUNT=len(revoked_pub_keys)))
     remove_list = list()
