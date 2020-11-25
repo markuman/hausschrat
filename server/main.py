@@ -55,13 +55,29 @@ def sign():
 
     ## fetch user's public keys
     ############################
-    pub_keys = requests.get(api['get_pub_keys'].format(url=scm_url),
-        headers={
-            'Authorization': 'token {TOKEN}'.format(TOKEN=data.get('api_token')),
-            'Content-Type': 'application/json',
-            'accept': 'application/json'
-        }
-    )
+    if api['SCM'] == 'gitlab':
+        pub_keys = requests.get(api['get_pub_keys'].format(url=scm_url),
+            headers={
+                'PRIVATE-TOKEN': api['auth_header'].format(TOKEN=data.get('api_token')),
+                'Content-Type': 'application/json',
+                'accept': 'application/json'
+            }
+        )
+        requested_user = requests.get(api['check_user'].format(url=scm_url),
+            headers={
+                'PRIVATE-TOKEN': api['auth_header'].format(TOKEN=data.get('api_token')),
+                'Content-Type': 'application/json',
+                'accept': 'application/json'
+            }
+        )
+    else:
+        pub_keys = requests.get(api['get_pub_keys'].format(url=scm_url),
+            headers={
+                'Authorization': api['auth_header'].format(TOKEN=data.get('api_token')),
+                'Content-Type': 'application/json',
+                'accept': 'application/json'
+            }
+        )
 
     if pub_keys.status_code == 200:
         logger.info(" api token is valid")
@@ -73,7 +89,10 @@ def sign():
             if data['key'] == key['title']:
                 logger.info(" found requested public key")
                 pub_key = key['key']
-                user = key['user']['username']
+                if api['SCM'] == 'gitlab':
+                    user = requested_user.json().get('username')
+                else:
+                    user = key['user']['username']
                 break
         
         ## set servers default expire value

@@ -21,17 +21,19 @@ def detect_scm(scm_url):
         gitlab identification is tias.
     """
     t = requests.get('{url}/api/v1/version'.format(url=scm_url))
-    if t.status_code == 200:
-        return {
-            'SCM': 'gitea',
-            'check_user': '{url}/api/v1/user',
-            'get_pub_keys': '{url}/api/v1/user/keys'
-        }
-    elif t.status_code == 503: # it's a gitlab :)
+    if t.status_code == 503: # it's a gitlab :)
         return {
             'SCM': 'gitlab',
             'check_user': '{url}/api/v4/user',
-            'get_pub_keys': '{url}/api/v4/user/keys'
+            'get_pub_keys': '{url}/api/v4/user/keys',
+            'auth_header': '{TOKEN}'
+        }
+    elif t.status_code == 200:
+        return {
+            'SCM': 'gitea',
+            'check_user': '{url}/api/v1/user',
+            'get_pub_keys': '{url}/api/v1/user/keys',
+            'auth_header': 'token {TOKEN}'
         }
 
 def process_revoked_public_key(logger):
