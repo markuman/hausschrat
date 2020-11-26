@@ -46,11 +46,10 @@ def sign():
     data = request.json
     settings = dbv2.get_settings()
 
-    if settings.get('scm_url'):
-        if date.get('scm_url'):
-            if settings.get('scm_url') != date.get('scm_url'):
-                logger.error(" server restricted scm_url")
-                return HTTPResponse(status=403)
+    if settings.get('scm_url') and data.get('scm_url'):
+        if settings.get('scm_url') != data.get('scm_url'):
+            logger.error(" server restricted scm_url")
+            return HTTPResponse(status=403)
 
     scm_url = settings.get('scm_url') or data.get('scm_url')
     
