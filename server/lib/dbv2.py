@@ -90,24 +90,3 @@ def get_settings():
 
 if __name__ == '__main__':
     init()
-
-    data = list(Keys().select().dicts())
-    data = Keys.create(
-        name='m',
-        pub_key='sowas',
-        signed=datetime.now(),
-        expire=datetime.now(),
-    )
-    data.save()
-
-    data = Keys.create(
-        name='m',
-        pub_key='nicht',
-        signed=datetime.now(),
-        expire=datetime.now(),
-        revoked=True
-    )
-    data.save()
-
-    data = list(Keys().select(Keys.pub_key).where(Keys.revoked == True).dicts())
-
