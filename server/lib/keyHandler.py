@@ -10,8 +10,6 @@ from lib import dbv2
 from lib import utils
 from lib.vendors import default
 
-priv_key_location = '/tmp/priv_key'
-
 def vault_handler(settings):
     ## set vendor provider
     ######################
@@ -28,10 +26,11 @@ def vault_handler(settings):
 
 def receive_priv_key(vault):
     priv_key = vault.key()
+    priv_key_location = utils.tmpname()
     with open(priv_key_location, 'w' ) as f:
         f.write(priv_key.decode('utf-8'))
     os.chmod(priv_key_location, 0o600)
-    return vault.password()
+    return vault.password(), priv_key_location
 
 def public_key():
     settings = dbv2.get_settings()
@@ -42,7 +41,7 @@ def public_key():
 
     vault = vault_handler(settings)
 
-    password = receive_priv_key(vault)
+    password, priv_key_location = receive_priv_key(vault)
 
     child = pexpect.spawn ('ssh-keygen -y -f {KEY}'.format(KEY=priv_key_location))
     child.expect('Enter passphrase: ')
@@ -57,7 +56,6 @@ def public_key():
 class keyHandling(object):
 
     def __init__(self, pub_key, user, expire, settings):
-        self.priv_key_location = '/tmp/priv_key'
         self.user = user
         self.pub_key = pub_key
         self.settings = settings
@@ -78,7 +76,7 @@ class keyHandling(object):
         ## save private key from vendor
         ###############################
         self.pub_key_file, self.pub_cert_file = utils.write_pub_key(pub_key)
-        self.password = receive_priv_key(self.vault)
+        self.password, self.priv_key_location = receive_priv_key(self.vault)
 
     def sign_key(self):
 
@@ -99,7 +97,7 @@ class keyHandling(object):
             USER=self.user,
             EXPIRE=self.expire,
             PUBLIC_KEY=self.pub_key_file,
-            PRIV_KEY=priv_key_location
+            PRIV_KEY=self.priv_key_location
         ))
         child.expect ('Enter passphrase: ')
         child.sendline (self.password)
@@ -127,7 +125,7 @@ class keyHandling(object):
         #######################
         os.remove(self.pub_key_file)
         os.remove(self.pub_cert_file)
-        os.remove(priv_key_location)
+        os.remove(self.priv_key_location)
 
         return cert
         
