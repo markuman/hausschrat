@@ -8,6 +8,7 @@ from lib import keyHandler
 from lib import scmHandler
 import logging
 import os
+import bottle
 
 logging.basicConfig(level=os.environ.get("LOGLEVEL", "INFO"))
 logger = logging.getLogger('hausschrat')
@@ -118,3 +119,5 @@ def sign():
 if __name__ == '__main__':
     dbv2.init()
     run(host='0.0.0.0', port=8080)
+
+app = bottle.default_app()
