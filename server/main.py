@@ -5,6 +5,7 @@ import requests
 from lib import dbv2
 from lib import utils
 from lib import keyHandler
+from lib import scmHandler
 import logging
 import os
 
@@ -43,6 +44,13 @@ def sign():
 
     data = request.json
     settings = dbv2.get_settings()
+
+    if settings.get('scm_url'):
+        if date.get('scm_url'):
+            if settings.get('scm_url') != date.get('scm_url'):
+                logger.error(" server restricted scm_url")
+                return HTTPResponse(status=403)
+
     scm_url = settings.get('scm_url') or data.get('scm_url')
     
     if scm_url is None:
@@ -51,86 +59,55 @@ def sign():
 
     ## determine scm_url backend
     ############################
-    api = utils.detect_scm(scm_url)
+    scm = scmHandler.scmHandler(scm_url, data.get('api_token'))
+    scm_user = scm.get_username()
+    pub_keys = scm.get_public_keys()
 
-    ## fetch user's public keys
+    logger.info(" api token is valid")
+
+    ## find requested public key
     ############################
-    if api['SCM'] == 'gitlab':
-        pub_keys = requests.get(api['get_pub_keys'].format(url=scm_url),
-            headers={
-                'PRIVATE-TOKEN': api['auth_header'].format(TOKEN=data.get('api_token')),
-                'Content-Type': 'application/json',
-                'accept': 'application/json'
-            }
-        )
-        requested_user = requests.get(api['check_user'].format(url=scm_url),
-            headers={
-                'PRIVATE-TOKEN': api['auth_header'].format(TOKEN=data.get('api_token')),
-                'Content-Type': 'application/json',
-                'accept': 'application/json'
-            }
-        )
-    else:
-        pub_keys = requests.get(api['get_pub_keys'].format(url=scm_url),
-            headers={
-                'Authorization': api['auth_header'].format(TOKEN=data.get('api_token')),
-                'Content-Type': 'application/json',
-                'accept': 'application/json'
-            }
-        )
+    pub_key, user = None, None
+    for key in pub_keys:
+        if data['key'] == key['title']:
+            logger.info(" found requested public key")
+            pub_key = key['key']
+            user = scm_user
+            break
+    
+    ## set servers default expire value
+    ## when user does not request it
+    ###################################
+    expire = data.get('expire') or settings.get('expire')
 
-    if pub_keys.status_code == 200:
-        logger.info(" api token is valid")
+    if None not in [pub_key, user]:
+        client_ip = request.environ.get('HTTP_X_FORWARDED_FOR') or request.environ.get('REMOTE_ADDR')
 
-        ## find requested public key
-        ############################
-        pub_key, user = None, None
-        for key in pub_keys.json():
-            if data['key'] == key['title']:
-                logger.info(" found requested public key")
-                pub_key = key['key']
-                if api['SCM'] == 'gitlab':
-                    user = requested_user.json().get('username')
-                else:
-                    user = key['user']['username']
-                break
+        ## strict_user mode.
+        ## issue a certificate
+        ## for user that owns
+        ## the api key
+        #######################
+        if data.get('user') is None or data.get('user') == user:
+            logger.info(" process certificate issue from {IP}".format(IP=client_ip))
+            kh = keyHandler.keyHandling(pub_key, user, expire, settings)
+            cert = kh.sign_key()
+            return { 'cert': cert}
+
+        ## server mode is not strict_user
+        ## issue a certificate
+        ## any user that is requested can
+        ## issue a certificate.
+        ##################################
+        elif settings.get('mode') in ['open', 'host']:
+            logger.info(" process certificate issue from {IP}".format(IP=client_ip))
+            kh = keyHandler.keyHandling(pub_key, data.get('user'), expire, settings)
+            cert = kh.sign_key()
+            return { 'cert': cert}
         
-        ## set servers default expire value
-        ## when user does not request it
-        ###################################
-        expire = data.get('expire') or settings.get('expire')
-
-        if None not in [pub_key, user]:
-            client_ip = request.environ.get('HTTP_X_FORWARDED_FOR') or request.environ.get('REMOTE_ADDR')
-
-            ## strict_user mode.
-            ## issue a certificate
-            ## for user that owns
-            ## the api key
-            #######################
-            if data.get('user') is None or data.get('user') == user:
-                logger.info(" process certificate issue from {IP}".format(IP=client_ip))
-                kh = keyHandler.keyHandling(pub_key, user, expire, settings)
-                cert = kh.sign_key()
-                return { 'cert': cert}
-
-            ## server mode is not strict_user
-            ## issue a certificate
-            ## any user that is requested can
-            ## issue a certificate.
-            ##################################
-            elif settings.get('mode') in ['open', 'host']:
-                logger.info(" process certificate issue from {IP}".format(IP=client_ip))
-                kh = keyHandler.keyHandling(pub_key, data.get('user'), expire, settings)
-                cert = kh.sign_key()
-                return { 'cert': cert}
-            
-            else:
-                logger.error(" requested username does not match with api_token")
-                return HTTPResponse(status=403)
         else:
-            logger.error(" user or public key not found")
-            return HTTPResponse(status=401)
+            logger.error(" requested username does not match with api_token")
+            return HTTPResponse(status=403)
 
     else:
         logger.error(" api_token is invalid for scm_url")
