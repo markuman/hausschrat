@@ -40,6 +40,6 @@ done
 
 | **host** | **category** |
 | --- | --- |
-| https://git.osuv.de/m/hausschrat | origin |
-| https://gitlab.com/markuman/hausschrat | pull mirror |
-| https://github.com/markuman/hausschrat | push mirror |
+| [https://git.osuv.de/m/hausschrat](https://git.osuv.de/m/hausschrat) | origin |
+| [https://gitlab.com/markuman/hausschrat](https://gitlab.com/markuman/hausschrat) | pull mirror |
+| [https://github.com/markuman/hausschrat](https://github.com/markuman/hausschrat) | push mirror |
