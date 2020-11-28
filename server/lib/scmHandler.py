@@ -28,13 +28,15 @@ class scmHandler(object):
 
     def its_gitlab(self):
 
-        t = requests.get('{url}/api/v1/version'.format(url=self.scm_url))
-        if t.status_code == 503: # it's a gitlab :)
+        t = requests.get('{url}/api/v4/version'.format(url=self.scm_url))
+        if t.status_code == 401: # it's a gitlab :)
             return True
-        elif t.status_code == 200:
+
+        t = requests.get('{url}/api/v1/version'.format(url=self.scm_url))
+        if t.status_code == 200:
             return False
-        else:
-            raise Exception('cannot detect scm or wrong api token')
+        
+        raise Exception('cannot detect scm or wrong api token')
 
     def get_username(self):
 
