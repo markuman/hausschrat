@@ -1,7 +1,7 @@
 FROM alpine:3.12
 
 RUN apk --update add python3 py3-pip openssh-keysign openssl
-RUN pip3 install peewee bottle pexpect lesspass gunicorn
+RUN pip3 install peewee bottle pexpect lesspass gunicorn pymysql
 
 COPY main.py /opt
 COPY lib/ /opt/lib
