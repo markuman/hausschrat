@@ -7,7 +7,7 @@ if [[ -z "${SSL}" ]]; then
     # SSL was not requested
     gunicorn -w 5 --bind 0.0.0.0:8080 main:app
 else
-    if [ ! -f /tmp/key.pem ]; then
+    if [ ! -f /opt/hausschrat/sslkey.pem ]; then
         # SSL was requested, but not server.key was provided
         # create self-signed
         openssl req -x509 -newkey rsa:4096 -keyout /opt/hausschrat/sslkey.pem \
