@@ -35,7 +35,8 @@ config location: ~/.config/hausschrat.yml
 def request(config):
     response = requests.post(
         '{SERVER}/sign'.format(SERVER=config.get('server')),
-        json=config
+        json=config,
+        verify=config.get('verify_ssl', True)
     )
 
     if response.status_code == 200:

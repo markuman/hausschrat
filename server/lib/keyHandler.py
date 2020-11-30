@@ -103,8 +103,7 @@ class keyHandling(object):
         child.sendline (self.password)
 
         if child.exitstatus is None:
-            time.sleep(2)
-
+            time.sleep(1)
         ## read issued certificate
         ##########################
         with open(self.pub_cert_file, 'r') as f:
