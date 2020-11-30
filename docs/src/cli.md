@@ -3,7 +3,9 @@
 Use pip to install.  
 `pip3 install hausschrat --user`  
 
-No magic here. That's all.## usage
+No magic here. That's all.
+
+## usage
 
 The configuration file of _hausschrat_ cli is located in `~/.config/hausschrat.yml`.  
 At least a profile named `default` must be configured.

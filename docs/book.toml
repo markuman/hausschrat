@@ -3,4 +3,11 @@ authors = ["Markus Bergholz"]
 multilingual = false
 src = "src"
 title = "Hausschrat"
+[preprocessor]
+[preprocessor.mermaid]
+command = "mdbook-mermaid"
+[output]
+[output.html]
+additional-css =["mermaid.css"]
+additional-js =["mermaid.min.js", "mermaid-init.js"]
 

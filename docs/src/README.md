@@ -11,6 +11,17 @@ You only need to glue things together. Here comes _hausschrat_ to play.
 
 A user needs to create an access token in their SCM Tool with `read_user` permissions only. With this access token, _hausschrat_ can verify the user, fetch the users belonging public key, sign them and response with the certificate.
 
+```mermaid
+sequenceDiagram
+  user->>gitlab: request read_only access token
+  gitlab->>user: save read_only token in .config/hausschrat.yml
+  user->>hausschrat: request sign public key markus@dell
+  hausschrat->gitlab: requests
+  Note over hausschrat,gitlab: verify access token & fetch users public keys
+  hausschrat->>user: response with -cert public key
+  user->>server: access server with signed public key
+```
+
 # Documentation
 
 Take a look at `docs/src/` folder or read it online: `https://hausschrat.eu`
@@ -21,11 +32,12 @@ Users just needs a `~/.config/hausschrat.yml` file.
 
 ```yml
 default:
-  server: http://localhost:8080 # hausschrat backend
+  server: https://localhost:8080 # hausschrat backend
+  verify_ssl: False
   scm_url: https://git.osuv.de 
   api_token: ... # go to your scm tool and create a `read_user` access token.
-  user: m
-  key: markus@dell
+  user: some_user
+  key: some_key_name
   expire: +5h
   cert_file: ~/.ssh/test-cert.pub 
 ```

@@ -61,9 +61,13 @@ docker run -ti --rm --name hausschrat \
     -e NEXTCLOUD_USER=username \
     -e NEXTCLOUD_TOKEN=abc \
     -e LESSPASS_PASSWORD=your_strong_lesspass_password \
+    -e SSL=yes \
     -p 8080:8080 \
     hausschrat:1
 ```
+
+SSL Key and Cert must be located in `/opt/hausschrat/{sslkey.pem,sslcert.pem}`.  
+When they are not found, hausschrat will generate a self-signed when env var `SSL` is set.
 
 ## backends
 
