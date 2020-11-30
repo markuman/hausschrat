@@ -28,7 +28,7 @@ def receive_priv_key(vault):
     priv_key = vault.key()
     priv_key_location = utils.tmpname()
     with open(priv_key_location, 'w' ) as f:
-        f.write(priv_key.decode('utf-8'))
+        f.write(priv_key)
     os.chmod(priv_key_location, 0o600)
     return vault.password(), priv_key_location
 

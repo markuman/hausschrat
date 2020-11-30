@@ -45,7 +45,7 @@ class vault(object):
         )
 
         if r.status_code == 200:
-            return r.content
+            return r.content.decode('utf-8')
         elif r.status_code == 404:
             raise Exception('key {key} does not exists'.format(key=self.path))
         else:

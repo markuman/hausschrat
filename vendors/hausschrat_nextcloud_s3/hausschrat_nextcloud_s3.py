@@ -47,7 +47,7 @@ class vault(object):
             self.client.download_fileobj(self.bucket, self.obj, f)
             retval = f.getvalue()
 
-            return retval
+            return retval.decode('utf-8')
         except:
             raise Exception('key not found or missing access permissions')
 
